@@ -119,12 +119,49 @@ static Instruction one_byte[255] = {
     {false, 0, "PUSHA", 0x60, 0, {0}},
     {false, 0, "POPA", 0x61, 0, {0}},
     {true, QWORD, "BOUND ", 0x62, 2, {R, RM}},
-    {true, WORD, "ARPL ", 2, 0x63, {RM, R}}
+    {true, WORD, "ARPL ", 0x63, 0, {RM, R}},
+    {false, 0, "FS ", 0x64, 0, {0}},
+    {false, 0, "GS ", 0x65, 0, {0}},
+    {false, 0, "DATA16 ", 0x66, 0, {0}},
+    {false, 0, "ADDR16 ", 0x67, 0, {0}},
+    {false, 0, "PUSH ", 0x68, 1, {IMM32}},
+    {true, DWORD, "IMUL ", 0x69, 3, {R, RM, IMM32}},
+    {false, 0, "PUSH ", 0x6A, 1, {IMM8}},
+    {true, DWORD, "IMUL ", 0x6B, 3, {R, RM, IMM8}},
+    {false, 0, "INS BYTE PTR es:[edi],dx", 0x6C, 0, {0}},
+	{false, 0, "INS DWORD PTR es:[edi],dx", 0x6D, 0, {0}},
+	{false, 0, "OUTS dx,BYTE PTR ds:[esi]", 0x6E, 0, {0}},
+	{false, 0, "OUTS dx,DWORD PTR ds:[esi]", 0x6F, 0, {0}},
+	{false, 0, "JO ", 0x70, 1, {REL8}},
+	{false, 0, "JNO ", 0x71, 1, {REL8}},
+	{false, 0, "JB ", 0x72, 1, {REL8}},
+	{false, 0, "JNB ", 0x73, 1, {REL8}},
+	{false, 0, "JZ ", 0x74, 1, {REL8}},
+	{false, 0, "JNZ ", 0x75, 1, {REL8}},
+	{false, 0, "JBE ", 0x76, 1, {REL8}},
+	{false, 0, "JNBE ", 0x77, 1, {REL8}},
+	{false, 0, "JS ", 0x78, 1, {REL8}},
+	{false, 0, "JNS ", 0x79, 1, {REL8}},
+	{false, 0, "JP ", 0x7A, 1, {REL8}},
+	{false, 0, "JNP ", 0x7B, 1, {REL8}},
+	{false, 0, "JL ", 0x7C, 1, {REL8}},
+	{false, 0, "JNL ", 0x7D, 1, {REL8}},
+	{false, 0, "JLE ", 0x7E, 1, {REL8}},
+	{false, 0, "JNLE ", 0x7F, 1, {REL8}},
+	{true, BYTE, "ADD ", 0x80, 2, {RM, IMM8}},
+	{true, DWORD, "ADD ", 0x81, 2, {RM, IMM32}},
+	{false, 0, ".byte 0x82", 0x82, 0, {0}},
+	{true, DWORD, "ADC ", 0x83, 2, {RM, IMM8}},
+	{true, BYTE, "TEST ", 0x84, 2, {RM, R}},
+	{true, DWORD, "TEST ", 0x85, 2, {RM, R}},
+	{true, BYTE, "XCHG ", 0x86, 2, {RM, R}},
+	{true, DWORD, "XCHG ", 0x87, 2, {RM, R}}
+	
 };
 
 static Instruction two_byte[255] = {
-    {true, WORD, "sldt ", 1, {RM}},
-    {true, 0, "sgdt ", 1, {RM}}
+    {true, WORD, "SLLDT ", 1, {RM}},
+    {true, 0, "SGDTD ", 1, {RM}}
 };
 
 void modrm(uint8_t byte, uint8_t * stuff) {
@@ -137,13 +174,14 @@ void modrm(uint8_t byte, uint8_t * stuff) {
 }
 
 unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
-
+	//printf("0x%x\n", *bytes);
 	static char reg_8[][10] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
 	static char reg_16[][10] = {"ax", "cx", "dx", "bx", "ax", "cx", "dx", "bx"};
 	static char reg_32[][10] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
 	static char sib_base[][10] = {"[eax", "[ecx", "[edx", "[ebx", "[esp", "[ebp", "[esi", "[edi"};
 	static char sib_scale[][10] = {"*1", "*2", "*4", "*8"};
-	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF, 0x0};
+	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF};
+	bool found = false;
 
 	unsigned char * base = bytes;
 	unsigned char opcode = *bytes++;
@@ -156,7 +194,7 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 	// for two-byte opcodes (i.e. starts with 0x0F)
 	if (opcode == 0x0F) {
 		int i = 0;
-		while (illegals[i] != 0x0) {
+		while (illegals[i] != 0xFF) {
 			if (illegals == bytes) {
 				printf("illegal");
 				return 1;
@@ -174,8 +212,8 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 	
 	for (int i = 0; i < instSize; i++) {
 		if (instruction[i].opcode == opcode) {
-			printf("Opcodes: 0x%x, 0x%x\n", instruction[i].opcode, opcode);
-
+			//printf("Opcodes: 0x%x, 0x%x\n", instruction[i].opcode, opcode);
+			found = true;
 			strcpy(output, instruction[i].asmb);
 
 			uint8_t mod, reg, rm;
@@ -254,9 +292,9 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 				}
 				
 			}
-	
-			for (int j = 0; j < instruction[i].arg_count; i++) {
-				if (i > 0) {
+			strcpy(output, instruction[i].asmb);
+			for (int j = 0; j < instruction[i].arg_count; j++) {
+				if (j > 0) {
 					strcat(output, ",");
 				}
 
@@ -299,12 +337,16 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
             			sprintf(output + strlen(output), "0x%x", *(int *)bytes);
             			break;
             		case REL8:
-            			sprintf(output + strlen(output), "0x%x", offset + ((bytes - base) + 1) + *(char *)bytes++);
+            			sprintf(output + strlen(output), "0x%lu", offset + ((bytes - base) + 1) + *(char *)bytes++);
             			break;
 				}
 			}
 		}
 	}
+
+	//if (!found) {
+		//sprintf(output + strlen(output), "0x%x", *bytes++);
+	//}
 	
 	return bytes - base;
 }

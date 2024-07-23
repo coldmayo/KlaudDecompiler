@@ -27,5 +27,7 @@ $(TARGET): $(OBJS)
 clean:
 	rm -f $(OBJS) $(TARGET)
 
+run:
+	@./dis
 # Phony targets
 .PHONY: all clean
