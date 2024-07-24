@@ -1,6 +1,6 @@
 # KlaudDecompiler
 
-This is supposed to be a decompiler made in C.
+This is supposed to be a decompiler made in C. Be wary, I am not finished with this yet.
 
 TODO:
 

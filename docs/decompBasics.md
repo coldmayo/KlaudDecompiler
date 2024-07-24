@@ -47,6 +47,8 @@ Opcodes have 2 classifications: one-byte (0x00 to 0xFF) and two-byte (0x0F to 0x
 
 ## Decompiling
 
+It would be cool if I used NLP to translate from assembly code to C code. I do not know much about NLP so I cannot provide much information other than I want to implement this in C++.
+
 # Sources
 1. <a href = "https://wiki.osdev.org/X86-64_Instruction_Encoding#ModR/M_and_SIB_bytes">OSDev.org</a>
 2. <a href = "https://www.scs.stanford.edu/05au-cs240c/lab/i386/c17.htm">80386 Instruction Set</a>

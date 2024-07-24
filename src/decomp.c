@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "decomp.h"
+#include "regs.h"
 
 void modrm(uint8_t byte, uint8_t * stuff) {
 	stuff[0] = (byte >> 6) & 0x3;
@@ -19,12 +20,7 @@ void SIB(uint8_t byte, char * stuff) {
 
 unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 	//printf("0x%x\n", *bytes);
-	static char reg_8[][10] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
-	static char reg_16[][10] = {"ax", "cx", "dx", "bx", "ax", "cx", "dx", "bx"};
-	static char reg_32[][10] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
-	static char sib_base[][10] = {"[eax", "[ecx", "[edx", "[ebx", "[esp", "[ebp", "[esi", "[edi"};
-	static char sib_scale[][10] = {"*1", "*2", "*4", "*8"};
-	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF};
+	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF, 0x00};
 	bool found = false;
 
 	unsigned char * base = bytes;
@@ -38,7 +34,7 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 	// for two-byte opcodes (i.e. starts with 0x0F)
 	if (opcode == 0x0F) {
 		int i = 0;
-		while (illegals[i] != 0xFF) {
+		while (illegals[i] != 0x00) {
 			if (illegals == bytes) {
 				printf("illegal");
 				return 1;
