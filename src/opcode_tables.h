@@ -395,7 +395,7 @@ static Instruction two_byte[255] = {
 	{true, QWORD, "pcmpeqd mm0,", 0x76, 1, {RM}},
 	{false, 0, "EMMS", 0x77, 0, {0}},
 	{true, DWORD, "VMREAD ", 0x78, 2, {RM, R}},
-	{true, DWORD, "VMWRITE ", 0x79, 2, {RM, R}}
+	{true, DWORD, "VMWRITE ", 0x79, 2, {RM, R}},
 	{false, 0, "(bad)", 0x7A, 1, {BAD}},
 	{false, 0, ".word 0x0f7b", 0x7B, 0, {0}},
 	{false, 0, ".word 0x0f7c", 0x7C, 0, {0}},
@@ -478,7 +478,7 @@ static Instruction two_byte[255] = {
 	{false, 0, "bswap ebx", 0xCB, 0, {0}},
 	{false, 0, "bswap esp", 0xCC, 0, {0}},
 	{false, 0, "bswap ebp", 0xCD, 0, {0}},
-	{false, 0, "bswap esi", 0xCE, 0, {0}),
+	{false, 0, "bswap esi", 0xCE, 0, {0}},
 	{false, 0, "bswap edi", 0xCF, 0, {0}},
 	{false, 0, ".word 0x0fd0", 0xD0, 0, {0}},
 	{false, QWORD, "psrlw mm0,", 0xD1, 1, {RM}},

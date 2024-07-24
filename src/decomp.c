@@ -19,7 +19,6 @@ void SIB(uint8_t byte, char * stuff) {
 }
 
 unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
-	//printf("0x%x\n", *bytes);
 	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF, 0x00};
 	bool found = false;
 
@@ -36,23 +35,27 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 		int i = 0;
 		while (illegals[i] != 0x00) {
 			if (illegals == bytes) {
-				printf("illegal");
+				printf("illegal\n");
 				return 1;
 			} else if (max < 2) {
-				printf("illegal");
+				printf("illegal\n");
 				return 1;
 			}
 			i++;
 		}
 		instruction = two_byte;
 		opcode = *bytes++;
+		if (opcode == 0) {
+			printf("illegal\n");
+			return 6969;
+		}
 	}
 
 	size_t instSize = sizeof(one_byte)/sizeof(Instruction);
 	
 	for (int i = 0; i < instSize; i++) {
 		if (instruction[i].opcode == opcode) {
-			//printf("Opcodes: 0x%x, 0x%x\n", instruction[i].opcode, opcode);
+			printf("Opcodes: 0x%x, 0x%x\n", instruction[i].opcode, opcode);
 			found = true;
 			strcpy(output, instruction[i].asmb);
 
@@ -190,6 +193,8 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 	//if (!found) {
 		//sprintf(output + strlen(output), "0x%x", *bytes++);
 	//}
+
+	strcat(output, "\n");
 	
 	return bytes - base;
 }
