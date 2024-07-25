@@ -18,7 +18,38 @@ void SIB(uint8_t byte, char * stuff) {
 	stuff[2] = (byte++) & 0b111;
 }
 
+void handle_prefix(uint8_t * bytes, prefix_info * pre) {
+	while (true) {
+		switch(*bytes) {
+			case LOCK:
+    			pre->lock = true;
+    			bytes++;
+    			break;
+    		case REPNZ:
+        		pre->repnz = true;
+        		bytes++;
+        		break;
+        	case REP:
+            	pre->rep = true;
+            	bytes++;
+            	break;
+            case FS:
+                pre->fs = true;
+                bytes++;
+                break;
+            case GS:
+                pre->gs = true;
+                bytes++;
+                break;
+    		default:
+        		return;
+		}
+	}
+	
+}
+
 unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
+	
 	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF, 0x00};
 	bool found = false;
 
@@ -30,7 +61,13 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 
 	Instruction * instruction = one_byte;
 
-	// for two-byte opcodes (i.e. starts with 0x0F)
+	prefix_info pre = {
+    	false, false, false, false, false
+	};
+	
+	handle_prefix(bytes, &pre);	
+
+	// deal with two byte opcodes or illegal opcodes
 	if (opcode == 0x0F) {
 		int i = 0;
 		while (illegals[i] != 0x00) {
@@ -55,12 +92,12 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 	
 	for (int i = 0; i < instSize; i++) {
 		if (instruction[i].opcode == opcode) {
-			printf("Opcodes: 0x%x, 0x%x\n", instruction[i].opcode, opcode);
+			//printf("Opcodes: 0x%x, 0x%x\n", instruction[i].opcode, opcode);
 			found = true;
 			strcpy(output, instruction[i].asmb);
 
 			uint8_t mod, reg, rm;
-			
+			// dealing with ecodings (SIB and MODR/M)
 			if (instruction[i].hasModRM) {
 
 				uint8_t stuff[3] = {0x0, 0x0, 0x0};
@@ -136,9 +173,31 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 						strcat(RM_output, "]");
 					}
 				}
-				
+
 			}
-			strcpy(output, instruction[i].asmb);
+			
+			char temp[256];
+            strcpy(temp, "");
+
+            if (pre.lock) {
+                strcat(temp, "LOCK ");
+            }
+            if (pre.repnz) {
+                strcat(temp, "REPNZ ");
+            }
+            if (pre.rep) {
+                strcat(temp, "REP ");
+            }
+            if (pre.fs) {
+				strcat(temp, "FS ");
+            }
+            if (pre.gs) {
+				strcat(temp, "GS ");
+            }
+
+            strcat(temp, instruction[i].asmb);
+            strcpy(output, temp);
+			
 			for (int j = 0; j < instruction[i].arg_count; j++) {
 				if (j > 0) {
 					strcat(output, ",");

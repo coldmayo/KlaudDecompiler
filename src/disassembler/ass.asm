@@ -1,0 +1,5 @@
+JNLE 0x71
+DEC ESP
+INC ESI
+ADD al,BYTE PTR [ecx]
+ADD DWORD PTR [eax],eax

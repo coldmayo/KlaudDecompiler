@@ -1,7 +1,8 @@
 all: compile
 
-compile: test1.o
-			@gcc -o test1 test1.o
+compile: test1.c
+			@gcc -o test1 test1.c
+			@gcc -S test1.c
 
 run:
 			@./test1
