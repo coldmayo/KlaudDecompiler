@@ -1,10 +1,7 @@
 # KlaudDecompiler
 
-This is supposed to be a decompiler made in C. Be wary, I am not finished with this yet.
+This is supposed to be a decompiler made in C. I currently am working on the disassembler (machine code -> assembly)
 
-TODO:
-
-- [ ] Create Disassembler
-	- doing this now
-- [ ] Determine a decompiliation method
-- [ ] Create Decompiler
+Future plans (for now):
+- Build RNN for translating Assembly to C using C++
+- Complete Disassembler

@@ -40,10 +40,22 @@ Definitions:
 			- scale: b11, factor ($s$): 8
 		- index (3 bits): shows which register to use
 		- base (3 bits): shows which base register to use
+- Atomic: an operation done by a computer is considered atomic if it is guaranteed to be isolated from other operations that may be happening at the same time
 
 In this opcode table we need to build a table that shows if modr/m is used for this byte, the size of the output of the command (DWORD [unsigned 32 bit value], WORD [unsigned 16 bit value], BYTE [unsigned 8 bit value]), and the arguments.
 
-Opcodes have 2 classifications: one-byte (0x00 to 0xFF) and two-byte (0x0F to 0x0FFF)
+Opcodes have 2 classifications: one-byte (0x00 to 0xFF) and two-byte (0x0F to 0x0FFF). The illegal bytes are:
+- 0x0F
+- 0xA6
+- 0xA7
+- 0xF7
+- 0xFF.
+
+An instruction can have up to 4 prefixes where the order does not matter
+- LOCK: With the LOCK prefix, certain read-modify-write instructions are executed atomically. The LOCK prefix can only be used with the following instructions: ACD, ADD, AND, BTC, BTR, BTS, CMPXCHG, CMPXCHG8B, CMPXCHG16B, DEC, INC, NEG, NOT, OR, SBB, SUB, XADD, XCHG and XOR
+- REPNE/REPNZ: repeat the instruction until CX reaches 0 or when ZF is set to 1. Can be used with CMPS, CMPSB, CMPSD, CMPSW, SCAS, SCASB, SCASD and SCASW
+- REP: repeat the associated instruction up to CX times, decreasing CX with every repetition. 
+- REPE/REPZ: repeat the instruction until CX reaches 0 or when ZF is set to 0. It can be used with the CMPS, CMPSB, CMPSD, CMPSW, SCAS, SCASB, SCASD and SCASW
 
 ## Decompiling
 
