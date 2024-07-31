@@ -6,18 +6,6 @@
 #include "decomp.h"
 #include "regs.h"
 
-void modrm(uint8_t byte, uint8_t * stuff) {
-	stuff[0] = (byte >> 6) & 0x3;
-	stuff[1] = (byte >> 3) & 0x7;
-	stuff[2] = byte & 0x7;
-}
-
-void SIB(uint8_t byte, char * stuff) {
-	stuff[0] = ((byte) >> 6) & 0b11;
-	stuff[1] = ((byte) >> 3) & 0b111;
-	stuff[2] = (byte++) & 0b111;
-}
-
 void handle_prefix(uint8_t * bytes, prefix_info * pre) {
 	while (true) {
 		switch(*bytes) {
@@ -49,47 +37,42 @@ void handle_prefix(uint8_t * bytes, prefix_info * pre) {
 }
 
 unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
-	
-	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF, 0x00};
+
+	uint8_t illegals[] = {0x0F, 0xA6, 0xA7, 0xF7, 0xFF};
 	bool found = false;
 
-	unsigned char * base = bytes;
-	unsigned char opcode = *bytes++;
+	uint8_t * base = bytes;
+	uint8_t opcode = *bytes++;
 
-	char RM_output[256] = {0};
-	char R_output[256] = {0};
+	char RM_output[256];
+	char R_output[256];
 
 	Instruction * instruction = one_byte;
 
 	prefix_info pre = {
     	false, false, false, false, false
 	};
-	
-	handle_prefix(bytes, &pre);	
+
+	handle_prefix(bytes, &pre);
 
 	// deal with two byte opcodes or illegal opcodes
 	if (opcode == 0x0F) {
 		int i = 0;
-		while (illegals[i] != 0x00) {
-			if (illegals == bytes) {
+		while (i < 4) {
+			if (illegals == *bytes) {
 				printf("illegal\n");
-				return 1;
-			} else if (max < 2) {
-				printf("illegal\n");
-				return 1;
-			}
+				return 0;
+			} 
 			i++;
 		}
+		//printf("two byte\n");
 		instruction = two_byte;
 		opcode = *bytes++;
-		if (opcode == 0) {
-			printf("illegal\n");
-			return 6969;
-		}
+
 	}
 
 	size_t instSize = sizeof(one_byte)/sizeof(Instruction);
-	
+
 	for (int i = 0; i < instSize; i++) {
 		if (instruction[i].opcode == opcode) {
 			//printf("Opcodes: 0x%x, 0x%x\n", instruction[i].opcode, opcode);
@@ -100,11 +83,9 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 			// dealing with ecodings (SIB and MODR/M)
 			if (instruction[i].hasModRM) {
 
-				uint8_t stuff[3] = {0x0, 0x0, 0x0};
-				modrm(*bytes++, stuff);
-				mod = stuff[0];
-				reg = stuff[1];
-				rm = stuff[2];
+				mod = (*bytes >> 6) & 0b11;
+				reg = (*bytes >> 3) & 0b111;
+				rm = (*bytes++) & 0b111;
 
 				switch (instruction[i].size) {
 					case WORD:
@@ -133,12 +114,10 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 					bytes += 4;
 				} else {
 					if (rm == 0b100) {
-    					char scale, index, base;
-    					char stuff[3] = {'a'};
-    					SIB(*bytes, stuff);
-						scale = stuff[0];
-						index = stuff[1];
-						base = stuff[2];
+    					uint8_t scale, index, base;
+						scale = ((*bytes) >> 6) & 0b11;;
+						index = ((*bytes) >> 3) & 0b111;
+						base = (*bytes++) & 0b111;
 
 						if (base == 0b101 && mod == 0b00) {
 							sprintf(RM_output, "[0x%x", *(int *)bytes);
@@ -158,9 +137,9 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 
 					if (mod == 0b01) {
 						if (*bytes > 0x7F) {
-							sprintf(RM_output + strlen(RM_output), "-0x%x]", -*(char *)bytes);
+							sprintf(RM_output + strlen(RM_output), "-0x%x]", -*(char *)bytes++);
 						} else {
-							sprintf(RM_output + strlen(RM_output), "+0x%x]", *(char *)bytes);
+							sprintf(RM_output + strlen(RM_output), "+0x%x]", *(char *)bytes++);
 						}
 					} else if (mod == 0b10) {
 						if (*(unsigned int *)bytes > 0x7FFFFFFF) {
@@ -175,7 +154,7 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 				}
 
 			}
-			
+
 			char temp[256];
             strcpy(temp, "");
 
@@ -197,7 +176,7 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
 
             strcat(temp, instruction[i].asmb);
             strcpy(output, temp);
-			
+
 			for (int j = 0; j < instruction[i].arg_count; j++) {
 				if (j > 0) {
 					strcat(output, ",");
@@ -244,16 +223,62 @@ unsigned int disassemble(uint8_t * bytes, int max, int offset, char * output) {
             		case REL8:
             			sprintf(output + strlen(output), "0x%lu", offset + ((bytes - base) + 1) + *(char *)bytes++);
             			break;
+            		case REL32:
+                		sprintf(output + strlen(output), "0x%x", offset + ((bytes - base) + 4) + *(int *)bytes);
+						bytes += 4;
+                		break;
+                	case PTR1632:
+                    	sprintf(output + strlen(output), "0x%x:0x%x", *(short *)(bytes + 4), *(int *)bytes);
+                    	bytes += 6;
+                    	break;
+                    case AL:
+                        strcat(output, "AL");
+                        break;
+                    case EAX:
+                        strcat(output, "EAX");
+                        break;
+                    case ES:
+                        strcat(output, "ES");
+                        break;
+                    case CS:
+                        strcat(output, "CS");
+                        break;
+                    case SS:
+                        strcat(output, "SS");
+                        break;
+                    case DS:
+                        strcat(output, "DS");
+                        break;
+                    case ONE:
+                        strcat(output, "1");
+                        break;
+                    case CL:
+                        strcat(output, "CL");
+                        break;
+                    case XMM0:
+                        strcat(output, "XMM0");
+                        break;
+                    case BND0:
+                        strcat(output, "BND0");
+                        break;
+                    case BAD:
+                        bytes++;
+                        break;
+                    case MM0:
+                        strcat(output, "MM0");
+                        break;
 				}
 			}
 		}
 	}
 
-	//if (!found) {
-		//sprintf(output + strlen(output), "0x%x", *bytes++);
-	//}
+	if (!found) {
+		sprintf(output + strlen(output), "0x%x", *bytes++);
+	}
 
 	strcat(output, "\n");
-	
-	return bytes - base;
+
+	if (((unsigned int)(bytes - base)) <= max) {
+		return bytes - base;
+	}
 }
