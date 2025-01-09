@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -48,12 +49,23 @@ def main():
                 if not byte:
                     break
                 bytess.append(int(byte.hex(), 16))
-
+        bytess = np.array([x for i, x in enumerate(bytess) if i == 0 or not (x == 0 and bytess[i-1] == 0)]).tolist()
         tokens = token_c(len(bytess), i)
 
         if len(tokens) == len(bytess):
             data["X_"+str(i)] = bytess
             data["Y_"+str(i)] = tokens
+    # find largest array        
+    biggest = 0
+    for i in data:
+        if biggest < len(data[i]):
+            biggest = len(data[i])
+
+    # make every array as big as the largest
+    for i in data:
+        if len(data[i]) != biggest:
+            data[i] = np.pad(data[i], (0, biggest-len(data[i])), mode='constant', constant_values=0).tolist()
+        
 
     df = pd.DataFrame(data)
     df.to_csv('data.csv', index=False)

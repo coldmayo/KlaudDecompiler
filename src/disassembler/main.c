@@ -37,8 +37,8 @@ void read_bin(const char * pth) {
 	char out[0xFF];
 	char instruction[0xFF];
 
-	for (int i = 0, count = 0; i < sizeof(bytes); i+= count) {
-		count = disassemble(bytes + i, sizeof(bytes) - i, i, out);
+	for (int i = 0, count = 0; i < sizeof(buffer); i+= count) {
+		count = disassemble(buffer + i, sizeof(buffer) - i, i, out);
 		instruction[0] = 0;
 		
 		for (int e = 0; e < count; e++) {
